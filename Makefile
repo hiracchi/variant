@@ -1,3 +1,5 @@
+CXXFLAGS = -I./msgpack-c/include
+
 .PHONY: all clean
 
 .c.o:
@@ -5,7 +7,7 @@
 .cpp.o:
 	$(CXX) $(CXXFLAGS) -c $<
 
-all: variant
+all: variant variant_msgpack
 clean:
 	-rm *.o *~
 
@@ -13,5 +15,5 @@ clean:
 variant: main_variant.o
 	$(CXX) -o $@ $^
 
-msgpack-test: msgpack-test.o
+variant_msgpack: main_variant_msgpack.o
 	$(CXX) -o $@ $^
