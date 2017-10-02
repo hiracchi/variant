@@ -14,11 +14,19 @@ Variant getVariant() {
 
 
 int main() {
-    Variant v = getVariant();
-    MsgPack msgpack(v);
+    {
+        Variant v = getVariant();
+        MsgPack msgpack(v);
+        msgpack.save("test.mpac");
+        std::cout << v.str() << std::endl;
+    }
 
-    msgpack.save("test.mpac");
-    //std::cout << v.str() << std::endl;
+    {
+        MsgPack msgpack;
+        msgpack.load("test.mpac");
+        const Variant v = msgpack.getVariant();
+        std::cout << v.str() << std::endl;
+    }
 
     return 0;
 }

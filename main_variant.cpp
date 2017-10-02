@@ -3,11 +3,11 @@
 #include "variant.hpp"
 
 int main() {
-    variant::Variant d;
+    Variant d;
     d["key1"] = "value1";
     d["group1"]["subgroup1"] = "value1-1";
 
-    variant::Variant v;
+    Variant v;
     v.resize(3);
     v[0] = 1.0;
     v[1] = 3;

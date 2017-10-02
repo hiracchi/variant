@@ -34,10 +34,13 @@ public:
     /// @retval false ファイルの読み込みに失敗した
     bool load(const std::string& path);
 
+    /// MsgPack 形式でファイルを書きだす
+    ///
+    /// @param[in] path ファイルの出力先
     void save(const std::string& path) const;
 
-    void pack(const std::string& str);
-    std::string dump() const;
+    void unpacker(const std::string& str);
+    std::string packer() const;
 
 protected:
     Variant loadBinary(std::istream& ifs);
@@ -81,10 +84,10 @@ protected:
     Variant unpack_map16(std::istream& ifs);
     Variant unpack_map32(std::istream& ifs);
 
-    std::string dump(const Variant& data) const;
-    std::string dump_scalar(const Variant& data) const;
-    std::string dump_array(const Variant& data) const;
-    std::string dump_map(const Variant& data) const;
+    std::string pack(const Variant& data) const;
+    std::string pack_scalar(const Variant& data) const;
+    std::string pack_array(const Variant& data) const;
+    std::string pack_map(const Variant& data) const;
 
     std::string pack(bool value) const;
     std::string pack(UINT8 value) const;
@@ -96,7 +99,7 @@ protected:
     std::string pack_int32(INT32 value) const;
     std::string pack_int64(INT64 value) const;
     std::string pack(double value) const;
-    std::string pack(const char* pBuf, const int size) const;
+    std::string pack(const std::string& str) const;
 
     template<typename T>
     void write(std::ostringstream& os, T value) const {
@@ -194,7 +197,7 @@ bool MsgPack::load(const std::string& path) {
 }
 
 
-void MsgPack::pack(const std::string& str) {
+void MsgPack::unpacker(const std::string& str) {
     std::istringstream iss(str);
     this->debugCurrentPos_ = 0; // initialize
     this->data_ = this->loadBinary(iss);
@@ -809,30 +812,30 @@ Variant MsgPack::unpack_map32(std::istream& ifs) {
 void MsgPack::save(const std::string& path) const {
     std::ofstream ofs;
     ofs.open(path.c_str(), std::ios::out | std::ios::trunc | std::ios::binary);
-    ofs << this->dump();
+    ofs << this->packer();
     ofs.close();
 }
 
 
-std::string MsgPack::dump() const {
-    return this->dump(this->data_);
+std::string MsgPack::packer() const {
+    return this->pack(this->data_);
 }
 
 
-std::string MsgPack::dump(const Variant& data) const {
+std::string MsgPack::pack(const Variant& data) const {
     std::ostringstream os;
 
     switch (data.type()) {
     case Variant::ARRAY:
-        os << this->dump_array(data);
+        os << this->pack_array(data);
         break;
 
     case Variant::MAP:
-        os << this->dump_map(data);
+        os << this->pack_map(data);
         break;
 
     default:
-        os << this->dump_scalar(data);
+        os << this->pack_scalar(data);
         break;
     }
 
@@ -840,7 +843,7 @@ std::string MsgPack::dump(const Variant& data) const {
 }
 
 
-std::string MsgPack::dump_scalar(const Variant& data) const {
+std::string MsgPack::pack_scalar(const Variant& data) const {
     std::ostringstream os;
 
     switch (data.type()) {
@@ -851,7 +854,7 @@ std::string MsgPack::dump_scalar(const Variant& data) const {
     case Variant::STRING:
         {
             const std::string str = data.get_str();
-            os << this->pack(str.c_str(), str.size());
+            os << this->pack(str);
         }
         break;
 
@@ -924,7 +927,7 @@ std::string MsgPack::dump_scalar(const Variant& data) const {
 }
 
 
-std::string MsgPack::dump_array(const Variant& data) const {
+std::string MsgPack::pack_array(const Variant& data) const {
     assert(data.type() == Variant::ARRAY);
     std::ostringstream os;
 
@@ -934,14 +937,14 @@ std::string MsgPack::dump_array(const Variant& data) const {
     this->write(os, this->toBigEndian(size));
 
     for (Variant::ArrayConstIterator p = data.beginArray(); p != data.endArray(); ++p) {
-        os << this->dump(*p);
+        os << this->pack(*p);
     }
 
     return os.str();
 }
 
 
-std::string MsgPack::dump_map(const Variant& data) const {
+std::string MsgPack::pack_map(const Variant& data) const {
     assert(data.type() == Variant::MAP);
     std::ostringstream os;
 
@@ -951,8 +954,8 @@ std::string MsgPack::dump_map(const Variant& data) const {
     this->write(os, this->toBigEndian(size));
 
     for (Variant::MapConstIterator p = data.beginMap(); p != data.endMap(); ++p) {
-        os << this->dump(p->first);
-        os << this->dump(p->second);
+        os << this->pack(p->first);
+        os << this->pack(p->second);
     }
 
     return os.str();
@@ -1062,14 +1065,13 @@ std::string MsgPack::pack(const double value) const {
 }
 
 
-std::string MsgPack::pack(const char* pBuf, const int size) const {
-    assert(pBuf != NULL);
+std::string MsgPack::pack(const std::string& str) const {
     std::ostringstream os;
+    const UINT32 N = str.length();
 
-    assert(sizeof(int) == 4);
-    this->write(os, char(0xc6)); // bin32
-    this->write(os, this->toBigEndian(size));
-    os.write(pBuf, size);
+    this->write(os, char(0xdb));
+    this->write(os, this->toBigEndian(N));
+    os.write(str.c_str(), sizeof(char) * N);
 
     return os.str();
 }
