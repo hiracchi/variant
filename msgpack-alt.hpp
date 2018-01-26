@@ -5,6 +5,14 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <algorithm>
+
+#if (__cplusplus >= 201103L)
+#include <cstdint>  // for C++11 and later
+#else
+#include <stdint.h> // for C++98 compiler (use C99 header)
+#endif // __cplusplus
+
 #include "variant.hpp"
 
 class MsgPack {

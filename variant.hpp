@@ -1,6 +1,7 @@
 #ifndef VARIANT_H
 #define VARIANT_H
 
+#include <cstdlib>
 #include <vector>
 #include <map>
 #include <sstream>
